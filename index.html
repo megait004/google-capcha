@@ -516,18 +516,18 @@
       }
     };
 
-    const finishIntro = (newTab) => {
+    // Safari/iOS bắt buộc gọi window.open đồng bộ trong user gesture.
+    // Chrome/Android cho phép gọi trong setTimeout nếu gesture gần đây.
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    const finishIntro = () => {
       const overlay = document.getElementById("intro-captcha");
       if (!overlay) return;
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
         overlay.remove();
-        if (newTab && !newTab.closed) {
-          // Safari: điều hướng cửa sổ đã mở sẵn
-          newTab.location.href = REDIRECT_URL;
-        } else {
-          // Chrome/Android: fallback — vẫn còn trong activation window
-          window.open(REDIRECT_URL, "_blank");
+        if (!isSafari) {
+          window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
         }
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
@@ -536,23 +536,16 @@
     const handleCaptchaChange = () => {
       if (introState.status !== "idle") return;
 
-      // Mở cửa sổ trắng đồng bộ (bắt buộc cho Safari/iOS).
-      const newTab = window.open("", "_blank");
-
-      // Ghi loading spinner vào tab vừa mở để tránh hiện trang trắng.
-      if (newTab) {
-        try {
-          newTab.document.write(`<!DOCTYPE html><html><head><title>Loading\u2026</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff;font-family:Helvetica,Arial,sans-serif}.wrap{text-align:center;color:#6b7280}.spinner{width:44px;height:44px;border:4px solid #e5e7eb;border-top-color:#0180FA;border-radius:50%;animation:spin .85s linear infinite;margin:0 auto 16px}@keyframes spin{to{transform:rotate(360deg)}}p{font-size:14px;font-weight:600}</style>
-</head><body><div class="wrap"><div class="spinner"></div><p>Loading\u2026</p></div></body></html>`);
-          newTab.document.close();
-        } catch (_) {}
+      if (isSafari) {
+        // Safari: mở tab với URL thật ngay lúc click (đồng bộ).
+        // Tab mở ở nền, animation vẫn chạy trên tab hiện tại.
+        window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
       }
 
       setStatus("loading");
       const verifyTimer = setTimeout(() => {
         setStatus("checked");
-        const finishTimer = setTimeout(() => finishIntro(newTab), TICK_DRAW_MS + DONE_DELAY_MS);
+        const finishTimer = setTimeout(finishIntro, TICK_DRAW_MS + DONE_DELAY_MS);
         introState.timers.push(finishTimer);
       }, VERIFY_DELAY_MS);
       introState.timers.push(verifyTimer);
