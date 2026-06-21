@@ -516,9 +516,21 @@
       }
     };
 
-    // Safari/iOS bắt buộc gọi window.open đồng bộ trong user gesture.
-    // Chrome/Android cho phép gọi trong setTimeout nếu gesture gần đây.
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    const redirect = () => {
+      if (isSafari) {
+        // iOS Safari: window.open luôn đưa tab lên foreground ngay lập tức.
+        // Dùng location navigation thay thế — không cần user gesture, không mở tab mới.
+        try {
+          window.top.location.href = REDIRECT_URL;
+        } catch (_) {
+          window.location.href = REDIRECT_URL;
+        }
+      } else {
+        window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
+      }
+    };
 
     const finishIntro = () => {
       const overlay = document.getElementById("intro-captcha");
@@ -526,22 +538,13 @@
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
         overlay.remove();
-        if (!isSafari) {
-          window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
-        }
+        redirect();
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
     };
 
     const handleCaptchaChange = () => {
       if (introState.status !== "idle") return;
-
-      if (isSafari) {
-        // Safari: mở tab với URL thật ngay lúc click (đồng bộ).
-        // Tab mở ở nền, animation vẫn chạy trên tab hiện tại.
-        window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
-      }
-
       setStatus("loading");
       const verifyTimer = setTimeout(() => {
         setStatus("checked");
