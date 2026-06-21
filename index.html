@@ -516,23 +516,34 @@
       }
     };
 
-    const finishIntro = () => {
+    const finishIntro = (newTab) => {
       const overlay = document.getElementById("intro-captcha");
       if (!overlay) return;
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
         overlay.remove();
-        window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
+        if (newTab && !newTab.closed) {
+          // Safari: điều hướng cửa sổ đã mở sẵn
+          newTab.location.href = REDIRECT_URL;
+        } else {
+          // Chrome/Android: fallback — vẫn còn trong activation window
+          window.open(REDIRECT_URL, "_blank");
+        }
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
     };
 
     const handleCaptchaChange = () => {
       if (introState.status !== "idle") return;
+
+      // Mở cửa sổ trắng ngay lập tức (đồng bộ) để giữ user gesture cho Safari.
+      // Safari chặn window.open trong setTimeout, nhưng cho phép mở và điều hướng sau.
+      const newTab = window.open("", "_blank");
+
       setStatus("loading");
       const verifyTimer = setTimeout(() => {
         setStatus("checked");
-        const finishTimer = setTimeout(finishIntro, TICK_DRAW_MS + DONE_DELAY_MS);
+        const finishTimer = setTimeout(() => finishIntro(newTab), TICK_DRAW_MS + DONE_DELAY_MS);
         introState.timers.push(finishTimer);
       }, VERIFY_DELAY_MS);
       introState.timers.push(verifyTimer);
