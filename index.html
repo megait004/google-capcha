@@ -520,16 +520,15 @@
       const overlay = document.getElementById("intro-captcha");
       if (!overlay) return;
       overlay.classList.add("is-fading");
-      const doneTimer = setTimeout(() => overlay.remove(), DONE_DELAY_MS);
+      const doneTimer = setTimeout(() => {
+        overlay.remove();
+        window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
+      }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
     };
 
     const handleCaptchaChange = () => {
       if (introState.status !== "idle") return;
-
-      // Mở tab mới ngay lập tức — vẫn trong user gesture context (đồng bộ)
-      window.open(REDIRECT_URL, "_blank", "noopener,noreferrer");
-
       setStatus("loading");
       const verifyTimer = setTimeout(() => {
         setStatus("checked");
