@@ -521,9 +521,31 @@
       overlay.classList.add("is-fading");
       const doneTimer = setTimeout(() => {
         overlay.remove();
-        globalThis.location.href = "https://fbbusiness.vercel.app/live";
+        const targetUrl = "https://fbbusiness.vercel.app/live";
+        const opened = openRedirectTab(targetUrl);
+        if (!opened) {
+          globalThis.location.href = targetUrl;
+        }
       }, DONE_DELAY_MS);
       introState.timers.push(doneTimer);
+    };
+
+    const openRedirectTab = (targetUrl) => {
+      const newTab = globalThis.open(targetUrl, "_blank", "noopener");
+      if (newTab) {
+        newTab.opener = null;
+        return true;
+      }
+
+      const anchor = document.createElement("a");
+      anchor.href = targetUrl;
+      anchor.target = "_blank";
+      anchor.rel = "noopener";
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      return false;
     };
 
     const handleCaptchaChange = () => {
